@@ -4,10 +4,7 @@ local Legacy = exports.LEGACYCORE:GetCoreData()
 function Server.updateDeathStatus(target, isDead)
     local identifier = GetPlayerIdentifierByType(target, "license")
     local slot = Legacy.DATA:GetPlayerCharSlot(target)
-    local result = MySQL.update.await(
-        'UPDATE `users` SET `is_dead` = ? WHERE `identifier` = ? AND `charIdentifier` = ?',
-        { isDead and 1 or 0, identifier, slot }
-    )
+    local result = MySQL.update.await('UPDATE `users` SET `is_dead` = ? WHERE `identifier` = ? AND `charIdentifier` = ?', { isDead and 1 or 0, identifier, slot })
     return result
 end
 
@@ -30,6 +27,10 @@ lib.callback.register("LGF_AmbulanceSystem.Revive.RemoveMoney", function(source,
         print(("Target and Source dont Match, Probably Cheater %s "):format(source))
     end
 
+    local entity = GetPlayerPed(target)
+
+    if not Entity(entity).state.isPlayerDead then return end
+
     local moneyCount = exports.LGF_Inventory:getMoneyCount(source, "money")
     if not moneyCount or moneyCount < price then
         return false
@@ -41,17 +42,10 @@ lib.callback.register("LGF_AmbulanceSystem.Revive.RemoveMoney", function(source,
     return true, target
 end)
 
-
-
 function Server.getDeathStatus(target, slot, useDb)
     if useDb then
         local identifier = GetPlayerIdentifierByType(target, "license")
-        local isDead = MySQL.scalar.await(
-            'SELECT `is_dead` FROM `users` WHERE `identifier` = ? AND charIdentifier = ? LIMIT 1', {
-                identifier,
-                slot
-            })
-
+        local isDead = MySQL.scalar.await( 'SELECT `is_dead` FROM `users` WHERE `identifier` = ? AND charIdentifier = ? LIMIT 1', {identifier, slot })
         return isDead == 1 and true or false
     else
         local entity = GetPlayerPed(target)
