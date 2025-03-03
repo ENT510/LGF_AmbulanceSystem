@@ -73,7 +73,10 @@ end
 
 function Client.changeDeathStatus(target, newStatus)
     if type(newStatus) ~= "boolean" then return end
-    lib.callback.await("LGF_AmbulanceSystem.Update.UpdateStatusDeath", false, target, newStatus)
+    if type(target) == "string" then target = tonumber(target) end
+    if not target or not newStatus then return end
+    local success, newState = lib.callback.await("LGF_AmbulanceSystem.Update.UpdateStatusDeath", false, target, newStatus)
+    return success, newState
 end
 
 function Client.stopPlayerDeath(target, coordsData)
