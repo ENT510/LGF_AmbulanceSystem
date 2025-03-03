@@ -11,14 +11,6 @@ function Server.updateDeathStatus(target, isDead)
     return result
 end
 
--- lib.callback.register("LGF_AmbulanceSystem.Init.RevivePlayerTarget", function(source, target, newStatus)
---     local entity = GetPlayerPed(target)
---     local id = target
---     Entity(entity).state:set('isPlayerDead', newStatus, true)
---     TriggerClientEvent("LGF_AmbulanceSystem.Update.UpdateDeathStatus", -1, id, newStatus)
---     Server.updateDeathStatus(source, state)
--- end)
-
 lib.callback.register("LGF_AmbulanceSystem.Update.UpdateStatusDeath", function(source, target, state, reviveTarget)
     reviveTarget = reviveTarget or false
     local entity = GetPlayerPed(target)
