@@ -12,14 +12,19 @@ lib.callback.register("LGF_AmbulanceSystem.Update.UpdateStatusDeath", function(s
     reviveTarget = reviveTarget or false
     local entity = GetPlayerPed(target)
     local id = target or source
-    Entity(entity).state:set('isPlayerDead', state, true)
-    TriggerClientEvent("LGF_AmbulanceSystem.Update.UpdateDeathStatus", -1, id, state)
-    Server.updateDeathStatus(id, state)
+    local newState = state 
+
+    Entity(entity).state:set('isPlayerDead', newState, true)
+    TriggerClientEvent("LGF_AmbulanceSystem.Update.UpdateDeathStatus", -1, id, newState)
+    Server.updateDeathStatus(id, newState)
+
     if reviveTarget then
         TriggerClientEvent("LGF_AmbulanceSystem.Init.RevivePlayerTarget", id, id)
     end
-    return true
+
+    return true, newState 
 end)
+
 
 
 lib.callback.register("LGF_AmbulanceSystem.Revive.RemoveMoney", function(source, target, price)
