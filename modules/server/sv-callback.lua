@@ -24,6 +24,25 @@ lib.callback.register("LGF_AmbulanceSystem.Update.UpdateStatusDeath", function(s
     return true
 end)
 
+
+lib.callback.register("LGF_AmbulanceSystem.Revive.RemoveMoney", function(source, target, price)
+    if target ~= source then
+        print(("Target and Source dont Match, Probably Cheater %s "):format(source))
+    end
+
+    local moneyCount = exports.LGF_Inventory:getMoneyCount(source, "money")
+    if not moneyCount or moneyCount < price then
+        return false
+    end
+
+    local success = exports.LGF_Inventory:removeItem(source, "money", price)
+    if not success then return false, target end
+
+    return true, target
+end)
+
+
+
 function Server.getDeathStatus(target, slot, useDb)
     if useDb then
         local identifier = GetPlayerIdentifierByType(target, "license")

@@ -2,6 +2,7 @@ Client                            = {}
 local Config                      = require "modules.client.cl-config"
 local Utils                       = require "modules.client.cl-utils"
 local Cam                         = require "modules.client.cl-cam"
+local Shared                      = require "shared"
 LocalPlayer.state.deathScreenBusy = false
 Players                           = {}
 local Legacy                      = exports.LEGACYCORE:GetCoreData()
@@ -55,8 +56,16 @@ function Client.openDeathScreen(data)
             Wait(1)
             if IsControlJustReleased(0, 38) then
                 local hasMoney = exports.LGF_Inventory:getMoneyCount("money") >= Config.priceForRevive
-                print(hasMoney)
-                Client.respawnPlayer(cache.serverId)
+
+                if hasMoney then
+                    local success, source = lib.callback.await("LGF_AmbulanceSystem.Revive.RemoveMoney", false,
+                        cache.serverId, Config.priceForRevive)
+                    if success then
+                        Client.respawnPlayer(source)
+                    end
+                else
+                    Shared.notify("No Money", "You dont have Enough money for pay", "error")
+                end
             end
         end
     end)
@@ -67,13 +76,22 @@ function Client.changeDeathStatus(target, newStatus)
     lib.callback.await("LGF_AmbulanceSystem.Update.UpdateStatusDeath", false, target, newStatus)
 end
 
-function Client.stopPlayerDeath(target)
+function Client.stopPlayerDeath(target, coordsData)
     local playerId = GetPlayerFromServerId(target)
     local playerPed = GetPlayerPed(playerId)
-    local coords = GetEntityCoords(playerPed)
+
+    local coords = coordsData ~= nil and coordsData or GetEntityCoords(playerPed)
+
     Client.openDeathScreen({ Display = false, DeathSeconds = 0 })
     Wait(500)
+
+    if coordsData ~= nil then
+        SetEntityCoordsNoOffset(playerPed, coords.x, coords.y, coords.z, false, false, false)
+    end
+
+
     NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(playerPed), false, false)
+
     TaskPlayAnim(playerPed, Config.animations["get_up"].dict, Config.animations["get_up"].clip, 8.0, -8.0, -1, 0, 0, 0, 0,
         0)
     SetEntityHealth(playerPed, GetEntityMaxHealth(playerPed))
@@ -85,13 +103,14 @@ function Client.stopPlayerDeath(target)
     Client.changeDeathStatus(target, false)
 end
 
-function Client.respawnPlayer(target)
+function Client.respawnPlayer(target, coords)
     if target == cache.serverId then
         local playerId = GetPlayerFromServerId(target)
         local playerPed = GetPlayerPed(playerId)
+        local coordsData = coords
         Utils.doScreenFade("out", 1000)
         Cam.DestroyCamera()
-        Client.stopPlayerDeath(target)
+        Client.stopPlayerDeath(target, coordsData)
         Wait(2000)
         FreezeEntityPosition(playerPed, false)
         ClearPedTasks(playerPed)
@@ -123,7 +142,7 @@ function Client.initPlayerDeath(target)
     while Players[target].isPlayerDead do
         local elapsedSeconds = math.floor((GetGameTimer() - deathTime) / 1000)
         if elapsedSeconds >= reviveSeconds then
-            Client.respawnPlayer(target)
+            Client.respawnPlayer(target, Config.respawnCoords)
         end
 
         Wait(500)
