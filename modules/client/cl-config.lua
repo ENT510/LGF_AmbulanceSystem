@@ -1,6 +1,6 @@
 Config = {}
 
-
+Config.priceForRevive = 4000
 
 Config.animations = {
     ["death_car"] = {

@@ -54,6 +54,8 @@ function Client.openDeathScreen(data)
         while Players[cache.serverId].isPlayerDead do
             Wait(1)
             if IsControlJustReleased(0, 38) then
+                local hasMoney = exports.LGF_Inventory:getMoneyCount("money") >= Config.priceForRevive
+                print(hasMoney)
                 Client.respawnPlayer(cache.serverId)
             end
         end
@@ -174,7 +176,7 @@ AddEventHandler('gameEventTriggered', function(event, data)
     if not IsPedAPlayer(victim) then return end
     local playerPed = PlayerPedId()
     if victim == playerPed then
-        if victimDied then
+        if victimDied and GetEntityHealth(victim) == 0 then
             local victimServerId = GetPlayerServerId(NetworkGetPlayerIndexFromPed(victim))
             Client.initPlayerDeath(victimServerId)
         end
